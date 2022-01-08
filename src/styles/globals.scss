@@ -29,8 +29,11 @@
 body {
   color: var(--light-gray);
   font-family: 'Inter', sans-serif;
-  font-size: 18px;
   background-color: var(--black);
+}
+
+ol, ul {
+  list-style: none;
 }
 
 a {

@@ -1,6 +1,8 @@
 import { GetStaticProps } from 'next';
 import Image from 'next/image';
 
+import { FiCalendar, FiUser } from 'react-icons/fi';
+
 import { getPrismicClient } from '../services/prismic';
 
 import commonStyles from '../styles/common.module.scss';
@@ -27,8 +29,8 @@ interface HomeProps {
 
 export default function Home(props: HomeProps): JSX.Element {
   return (
-    <>
-      <header>
+    <div className={styles.container}>
+      <header className={styles.header}>
         <h1>
           <Image
             src="/spacetraveling-logo.png"
@@ -38,20 +40,54 @@ export default function Home(props: HomeProps): JSX.Element {
           />
         </h1>
       </header>
-      <section>
+      <section className={styles.content}>
         <ol>
           <li>
-            <h2>Título</h2>
-            <p>Resumo</p>
+            <h2>Como utilizar Hooks</h2>
+            <p>Pensando em sincronização em vez de ciclos de vida.</p>
             <div>
-              <date>15 Mar 2021</date>
-              <p>Joseph Oliveira</p>
+              <time>
+                <FiCalendar />
+                15 Mar 2021
+              </time>
+              <p>
+                <FiUser />
+                Joseph Oliveira
+              </p>
+            </div>
+          </li>
+          <li>
+            <h2>Como utilizar Hooks</h2>
+            <p>Pensando em sincronização em vez de ciclos de vida.</p>
+            <div>
+              <time>
+                <FiCalendar />
+                15 Mar 2021
+              </time>
+              <p>
+                <FiUser />
+                Joseph Oliveira
+              </p>
+            </div>
+          </li>
+          <li>
+            <h2>Como utilizar Hooks</h2>
+            <p>Pensando em sincronização em vez de ciclos de vida.</p>
+            <div>
+              <time>
+                <FiCalendar />
+                15 Mar 2021
+              </time>
+              <p>
+                <FiUser />
+                Joseph Oliveira
+              </p>
             </div>
           </li>
         </ol>
         <button type="button">Carregar mais posts</button>
       </section>
-    </>
+    </div>
   );
 }
 
