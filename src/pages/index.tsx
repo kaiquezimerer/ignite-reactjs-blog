@@ -30,50 +30,50 @@ interface HomeProps {
 
 export default function Home(props: HomeProps): JSX.Element {
   return (
-    <div className={styles.container}>
+    <div className={commonStyles.container}>
       <Header />
       <section className={styles.content}>
         <ol>
           <li>
             <h2>Como utilizar Hooks</h2>
-            <p>Pensando em sincronização em vez de ciclos de vida.</p>
-            <div>
+            <h3>Pensando em sincronização em vez de ciclos de vida.</h3>
+            <div className={commonStyles.postInfo}>
               <time>
                 <FiCalendar />
                 15 Mar 2021
               </time>
-              <p>
+              <h4>
                 <FiUser />
                 Joseph Oliveira
-              </p>
+              </h4>
             </div>
           </li>
           <li>
             <h2>Como utilizar Hooks</h2>
-            <p>Pensando em sincronização em vez de ciclos de vida.</p>
+            <h3>Pensando em sincronização em vez de ciclos de vida.</h3>
             <div>
               <time>
                 <FiCalendar />
                 15 Mar 2021
               </time>
-              <p>
+              <h4>
                 <FiUser />
                 Joseph Oliveira
-              </p>
+              </h4>
             </div>
           </li>
           <li>
             <h2>Como utilizar Hooks</h2>
-            <p>Pensando em sincronização em vez de ciclos de vida.</p>
+            <h3>Pensando em sincronização em vez de ciclos de vida.</h3>
             <div>
               <time>
                 <FiCalendar />
                 15 Mar 2021
               </time>
-              <p>
+              <h4>
                 <FiUser />
                 Joseph Oliveira
-              </p>
+              </h4>
             </div>
           </li>
         </ol>

@@ -45,6 +45,10 @@ a {
   }
 }
 
-button {
+a {
+  color: var(--pink);
+}
+
+a, button {
   cursor: pointer;
 }
