@@ -3,6 +3,11 @@
   height: 400px;
   background: var(--gray);
   margin-bottom: 5rem;
+
+  // Viewport <= 720px
+  @media screen and (max-width: 720px) {
+    height: 200px;
+  }
 }
 
 .content {
@@ -10,14 +15,15 @@
 
   h1 {
     font-size: 3rem;
-    line-height: 5rem;
+    line-height: 4rem;
+    margin-bottom: 1rem;
   }
 
   h2 {
     margin-top: 3rem;
     margin-bottom: 1rem;
     font-size: 2rem;
-    line-height: 4rem;
+    line-height: 3rem;
   }
 
   p {

@@ -32,10 +32,12 @@ interface PostProps {
 export default function Post(): JSX.Element {
   return (
     <>
-      <Header />
-      <article>
+      <div className={commonStyles.container}>
+        <Header />
+      </div>
+      <article className={styles.content}>
         <section className={styles.cover} />
-        <section className={`${commonStyles.container} ${styles.content}`}>
+        <section className={commonStyles.container}>
           <h1>Criando um app CRA do zero</h1>
           <div className={commonStyles.postInfo}>
             <time>
@@ -79,7 +81,7 @@ export default function Post(): JSX.Element {
             vulputate et erat. Nam venenatis. Cras laoreet mi Nulla auctor sit
             amet quam vitae commodo. Sed risus justo, vulputate quis neque eget,
             dictum sodales sem. In eget felis finibus, mattis magna a,{' '}
-            <a href="#">efficiturex</a>. Curabitur vitae justo consequat sapien
+            <a href="#">efficiturex</a> . Curabitur vitae justo consequat sapien
             gravida auctor a non risus. Sed malesuada mauris nec orci congue,
             interdum efficitur urna dignissim. Vivamus cursus elit sem, vel
             facilisis nulla pretium consectetur. Nunc congue. Class aptent

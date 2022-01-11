@@ -1,7 +1,13 @@
+/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
+/* eslint-disable jsx-a11y/click-events-have-key-events */
+
 import { GetStaticProps } from 'next';
+
+import Link from 'next/link';
 
 import { FiCalendar, FiUser } from 'react-icons/fi';
 
+import { useRouter } from 'next/router';
 import { getPrismicClient } from '../services/prismic';
 
 import Header from '../components/Header';
@@ -29,12 +35,18 @@ interface HomeProps {
 }
 
 export default function Home(props: HomeProps): JSX.Element {
+  const router = useRouter();
+
+  function goToPostPage(): void {
+    router.push('/post/1');
+  }
+
   return (
     <div className={commonStyles.container}>
       <Header />
       <section className={styles.content}>
         <ol>
-          <li>
+          <li onClick={goToPostPage}>
             <h2>Como utilizar Hooks</h2>
             <h3>Pensando em sincronização em vez de ciclos de vida.</h3>
             <div className={commonStyles.postInfo}>
@@ -48,10 +60,10 @@ export default function Home(props: HomeProps): JSX.Element {
               </h4>
             </div>
           </li>
-          <li>
+          <li onClick={goToPostPage}>
             <h2>Como utilizar Hooks</h2>
             <h3>Pensando em sincronização em vez de ciclos de vida.</h3>
-            <div>
+            <div className={commonStyles.postInfo}>
               <time>
                 <FiCalendar />
                 15 Mar 2021
@@ -62,10 +74,10 @@ export default function Home(props: HomeProps): JSX.Element {
               </h4>
             </div>
           </li>
-          <li>
+          <li onClick={goToPostPage}>
             <h2>Como utilizar Hooks</h2>
             <h3>Pensando em sincronização em vez de ciclos de vida.</h3>
-            <div>
+            <div className={commonStyles.postInfo}>
               <time>
                 <FiCalendar />
                 15 Mar 2021
