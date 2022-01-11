@@ -1,13 +1,14 @@
 /* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 
+import { useEffect, useState } from 'react';
 import { GetStaticProps } from 'next';
-
-import Link from 'next/link';
-
+import { useRouter } from 'next/router';
+import { format } from 'date-fns';
+import ptBR from 'date-fns/locale/pt-BR';
+import Prismic from '@prismicio/client';
 import { FiCalendar, FiUser } from 'react-icons/fi';
 
-import { useRouter } from 'next/router';
 import { getPrismicClient } from '../services/prismic';
 
 import Header from '../components/Header';
@@ -31,14 +32,52 @@ interface PostPagination {
 }
 
 interface HomeProps {
-  postsPagination: PostPagination;
+  postPagination: PostPagination;
 }
 
-export default function Home(props: HomeProps): JSX.Element {
+export default function Home({ postPagination }: HomeProps): JSX.Element {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [nextPage, setNextPage] = useState<string>(null);
+
   const router = useRouter();
 
-  function goToPostPage(): void {
-    router.push('/post/1');
+  useEffect(() => {
+    setPosts(postPagination.results);
+    setNextPage(postPagination.next_page);
+  }, []);
+
+  function goToPostPage(slug: string): void {
+    router.push(`/post/${slug}`);
+  }
+
+  async function loadMorePosts(url: string): Promise<void> {
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+
+      const results = data.results.map((post: Post) => {
+        return {
+          uid: post.uid,
+          data: {
+            title: post.data.title,
+            subtitle: post.data.subtitle,
+            author: post.data.author,
+          },
+          first_publication_date: format(
+            new Date(post.first_publication_date),
+            'dd LLL yyyy',
+            {
+              locale: ptBR,
+            }
+          ),
+        };
+      });
+
+      setPosts([...posts, ...results]);
+      setNextPage(data.next_page);
+    } catch (err) {
+      console.log(err);
+    }
   }
 
   return (
@@ -46,58 +85,70 @@ export default function Home(props: HomeProps): JSX.Element {
       <Header />
       <section className={styles.content}>
         <ol>
-          <li onClick={goToPostPage}>
-            <h2>Como utilizar Hooks</h2>
-            <h3>Pensando em sincronização em vez de ciclos de vida.</h3>
-            <div className={commonStyles.postInfo}>
-              <time>
-                <FiCalendar />
-                15 Mar 2021
-              </time>
-              <h4>
-                <FiUser />
-                Joseph Oliveira
-              </h4>
-            </div>
-          </li>
-          <li onClick={goToPostPage}>
-            <h2>Como utilizar Hooks</h2>
-            <h3>Pensando em sincronização em vez de ciclos de vida.</h3>
-            <div className={commonStyles.postInfo}>
-              <time>
-                <FiCalendar />
-                15 Mar 2021
-              </time>
-              <h4>
-                <FiUser />
-                Joseph Oliveira
-              </h4>
-            </div>
-          </li>
-          <li onClick={goToPostPage}>
-            <h2>Como utilizar Hooks</h2>
-            <h3>Pensando em sincronização em vez de ciclos de vida.</h3>
-            <div className={commonStyles.postInfo}>
-              <time>
-                <FiCalendar />
-                15 Mar 2021
-              </time>
-              <h4>
-                <FiUser />
-                Joseph Oliveira
-              </h4>
-            </div>
-          </li>
+          {posts.map(post => (
+            <li key={post.uid} onClick={() => goToPostPage(post.uid)}>
+              <h2>{post.data.title}</h2>
+              <h3>{post.data.subtitle}</h3>
+              <div className={commonStyles.postInfo}>
+                <time>
+                  <FiCalendar />
+                  {post.first_publication_date}
+                </time>
+                <h4>
+                  <FiUser />
+                  {post.data.author}
+                </h4>
+              </div>
+            </li>
+          ))}
         </ol>
-        <button type="button">Carregar mais posts</button>
+        {nextPage && (
+          <button type="button" onClick={() => loadMorePosts(nextPage)}>
+            Carregar mais posts
+          </button>
+        )}
       </section>
     </div>
   );
 }
 
-// export const getStaticProps = async () => {
-//   // const prismic = getPrismicClient();
-//   // const postsResponse = await prismic.query(TODO);
+export const getStaticProps: GetStaticProps = async () => {
+  const prismic = getPrismicClient();
 
-//   // TODO
-// };
+  const postsResponse = await prismic.query(
+    [Prismic.predicates.at('document.type', 'posts')],
+    {
+      fetch: ['posts.title', 'posts.subtitle', 'posts.author'],
+      pageSize: 1,
+    }
+  );
+
+  // Formatting data (posts)
+  const results = postsResponse.results.map(post => {
+    return {
+      uid: post.uid,
+      data: {
+        title: post.data.title,
+        subtitle: post.data.subtitle,
+        author: post.data.author,
+      },
+      first_publication_date: format(
+        new Date(post.first_publication_date),
+        'dd LLL yyyy',
+        {
+          locale: ptBR,
+        }
+      ),
+    };
+  });
+
+  return {
+    props: {
+      postPagination: {
+        results,
+        next_page: postsResponse.next_page,
+      },
+    },
+    revalidate: 60 * 30, // 30 minutes
+  };
+};
