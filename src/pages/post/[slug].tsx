@@ -2,8 +2,9 @@
 
 import { GetStaticPaths, GetStaticProps } from 'next';
 import { FiCalendar, FiUser, FiClock } from 'react-icons/fi';
+import Prismic from '@prismicio/client';
 
-import { format } from 'date-fns';
+import { format, minutesToHours } from 'date-fns';
 import ptBR from 'date-fns/locale/pt-BR';
 import { RichText } from 'prismic-dom';
 import Header from '../../components/Header';
@@ -35,6 +36,30 @@ interface PostProps {
 }
 
 export default function Post({ post }: PostProps): JSX.Element {
+  function calculateReadingTime(content): string {
+    const getHeadingWordsPerMinutes = content.reduce((acc, currentValue) => {
+      return currentValue.heading.split(/\s+/).length + acc;
+    }, 0);
+
+    const getBodyWordsPerMinutes = content.reduce((acc, currentValue) => {
+      return RichText.asText(currentValue.body).split(/\s+/).length + acc;
+    }, 0);
+
+    const getWordsPerMinutes = Math.ceil(
+      (getHeadingWordsPerMinutes + getBodyWordsPerMinutes) / 200
+    );
+
+    if (getWordsPerMinutes < 1) {
+      return 'Rápida leitura';
+    }
+
+    if (getWordsPerMinutes < 60) {
+      return `${getWordsPerMinutes} min`;
+    }
+
+    return `${minutesToHours(getWordsPerMinutes)} horas`;
+  }
+
   return (
     <>
       <div className={commonStyles.container}>
@@ -57,14 +82,17 @@ export default function Post({ post }: PostProps): JSX.Element {
               {post.data.author}
             </h4>
             <h4>
-              <FiClock />4 min
+              <FiClock />
+              {calculateReadingTime(post.data.content)}
             </h4>
           </div>
           {post.data.content.map(elem => (
-            <>
+            <div key={elem.heading}>
               <h2>{elem.heading}</h2>
-              <div dangerouslySetInnerHTML={{ __html: elem.body[0].text }} />
-            </>
+              <div
+                dangerouslySetInnerHTML={{ __html: RichText.asHtml(elem.body) }}
+              />
+            </div>
           ))}
         </section>
       </article>
@@ -73,13 +101,21 @@ export default function Post({ post }: PostProps): JSX.Element {
 }
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  // const prismic = getPrismicClient();
-  // const posts = await prismic.query(TODO);
+  const prismic = getPrismicClient();
+  const posts = await prismic.query(
+    [Prismic.predicates.at('document.type', 'posts')],
+    {
+      fetch: ['posts.slug'],
+    }
+  );
 
-  // // TODO
+  const params = posts.results.map(post => ({
+    params: { slug: post.uid },
+  }));
+
   return {
-    paths: [],
-    fallback: 'blocking',
+    paths: params,
+    fallback: true,
   };
 };
 
@@ -103,12 +139,7 @@ export const getStaticProps: GetStaticProps = async props => {
         url: response.data.banner.url,
       },
       author: response.data.author,
-      content: response.data.content.map(item => {
-        return {
-          heading: item.heading,
-          body: [{ text: RichText.asHtml(item.body) }],
-        };
-      }),
+      content: response.data.content,
     },
   };
 
