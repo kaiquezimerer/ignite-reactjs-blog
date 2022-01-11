@@ -1,9 +1,10 @@
 import { GetStaticProps } from 'next';
-import Image from 'next/image';
 
 import { FiCalendar, FiUser } from 'react-icons/fi';
 
 import { getPrismicClient } from '../services/prismic';
+
+import Header from '../components/Header';
 
 import commonStyles from '../styles/common.module.scss';
 import styles from './home.module.scss';
@@ -30,16 +31,7 @@ interface HomeProps {
 export default function Home(props: HomeProps): JSX.Element {
   return (
     <div className={styles.container}>
-      <header className={styles.header}>
-        <h1>
-          <Image
-            src="/spacetraveling-logo.png"
-            alt="Logo do Spacetraveling"
-            width={238}
-            height={25}
-          />
-        </h1>
-      </header>
+      <Header />
       <section className={styles.content}>
         <ol>
           <li>
