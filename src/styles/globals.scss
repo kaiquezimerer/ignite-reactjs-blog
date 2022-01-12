@@ -37,13 +37,9 @@ ol, ul {
   line-height: 1.5rem;
 }
 
-a {
+a[href] {
   color: inherit;
   text-decoration: none;
-
-  &:hover {
-    text-decoration: underline;
-  }
 }
 
 a {

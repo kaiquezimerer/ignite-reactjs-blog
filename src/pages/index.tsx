@@ -1,9 +1,6 @@
-/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
-/* eslint-disable jsx-a11y/click-events-have-key-events */
-
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { GetStaticProps } from 'next';
-import { useRouter } from 'next/router';
+import Link from 'next/link';
 import { format } from 'date-fns';
 import ptBR from 'date-fns/locale/pt-BR';
 import Prismic from '@prismicio/client';
@@ -32,25 +29,22 @@ interface PostPagination {
 }
 
 interface HomeProps {
-  postPagination: PostPagination;
+  postsPagination: PostPagination;
 }
 
-export default function Home({ postPagination }: HomeProps): JSX.Element {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [nextPage, setNextPage] = useState<string>(null);
+export default function Home({ postsPagination }: HomeProps): JSX.Element {
+  const [posts, setPosts] = useState<Post[]>(postsPagination.results);
+  const [nextPage, setNextPage] = useState<string>(postsPagination.next_page);
 
-  const router = useRouter();
-
-  useEffect(() => {
-    setPosts(postPagination.results);
-    setNextPage(postPagination.next_page);
-  }, []);
-
-  function goToPostPage(slug: string): void {
-    router.push(`/post/${slug}`);
+  // Format ISO date. Ex.: 10 Mar 2021
+  function formatDate(date: string): string {
+    return format(new Date(date), 'dd LLL yyyy', {
+      locale: ptBR,
+    });
   }
 
-  async function loadMorePosts(url: string): Promise<void> {
+  // Load and render more posts from Prismic API (Pagination)
+  async function handleLoadMorePosts(url: string): Promise<void> {
     try {
       const response = await fetch(url);
       const data = await response.json();
@@ -63,13 +57,7 @@ export default function Home({ postPagination }: HomeProps): JSX.Element {
             subtitle: post.data.subtitle,
             author: post.data.author,
           },
-          first_publication_date: format(
-            new Date(post.first_publication_date),
-            'dd LLL yyyy',
-            {
-              locale: ptBR,
-            }
-          ),
+          first_publication_date: formatDate(post.first_publication_date),
         };
       });
 
@@ -86,24 +74,28 @@ export default function Home({ postPagination }: HomeProps): JSX.Element {
       <section className={styles.content}>
         <ol>
           {posts.map(post => (
-            <li key={post.uid} onClick={() => goToPostPage(post.uid)}>
-              <h2>{post.data.title}</h2>
-              <h3>{post.data.subtitle}</h3>
-              <div className={commonStyles.postInfo}>
-                <time>
-                  <FiCalendar />
-                  {post.first_publication_date}
-                </time>
-                <h4>
-                  <FiUser />
-                  {post.data.author}
-                </h4>
-              </div>
+            <li key={post.uid}>
+              <Link href={`/post/${post.uid}`}>
+                <a>
+                  <h2>{post.data.title}</h2>
+                  <h3>{post.data.subtitle}</h3>
+                  <div className={commonStyles.postInfo}>
+                    <time>
+                      <FiCalendar />
+                      {formatDate(post.first_publication_date)}
+                    </time>
+                    <h4>
+                      <FiUser />
+                      {post.data.author}
+                    </h4>
+                  </div>
+                </a>
+              </Link>
             </li>
           ))}
         </ol>
         {nextPage && (
-          <button type="button" onClick={() => loadMorePosts(nextPage)}>
+          <button type="button" onClick={() => handleLoadMorePosts(nextPage)}>
             Carregar mais posts
           </button>
         )}
@@ -112,6 +104,7 @@ export default function Home({ postPagination }: HomeProps): JSX.Element {
   );
 }
 
+// SSG
 export const getStaticProps: GetStaticProps = async () => {
   const prismic = getPrismicClient();
 
@@ -119,11 +112,11 @@ export const getStaticProps: GetStaticProps = async () => {
     [Prismic.predicates.at('document.type', 'posts')],
     {
       fetch: ['posts.title', 'posts.subtitle', 'posts.author'],
-      pageSize: 5,
+      pageSize: 1,
     }
   );
 
-  // Formatting data (posts)
+  // Formatting props (post list)
   const results = postsResponse.results.map(post => {
     return {
       uid: post.uid,
@@ -132,19 +125,13 @@ export const getStaticProps: GetStaticProps = async () => {
         subtitle: post.data.subtitle,
         author: post.data.author,
       },
-      first_publication_date: format(
-        new Date(post.first_publication_date),
-        'dd LLL yyyy',
-        {
-          locale: ptBR,
-        }
-      ),
+      first_publication_date: post.first_publication_date,
     };
   });
 
   return {
     props: {
-      postPagination: {
+      postsPagination: {
         results,
         next_page: postsResponse.next_page,
       },
