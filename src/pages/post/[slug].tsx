@@ -7,6 +7,7 @@ import Prismic from '@prismicio/client';
 import { format, minutesToHours } from 'date-fns';
 import ptBR from 'date-fns/locale/pt-BR';
 import { RichText } from 'prismic-dom';
+import { useRouter } from 'next/router';
 import Header from '../../components/Header';
 
 import { getPrismicClient } from '../../services/prismic';
@@ -36,6 +37,21 @@ interface PostProps {
 }
 
 export default function Post({ post }: PostProps): JSX.Element {
+  const { isFallback } = useRouter();
+
+  // Show loading message if the route is a fallback
+  if (isFallback) {
+    return <h1 className={styles.loading}>Carregando...</h1>;
+  }
+
+  // Format ISO date. Ex.: 10 Mar 2021
+  function formatDate(date: string): string {
+    return format(new Date(date), 'dd LLL yyyy', {
+      locale: ptBR,
+    });
+  }
+
+  // Calculate reading time based on the total number of words in the content (totalWords / 200)
   function calculateReadingTime(content): string {
     const getHeadingWordsPerMinutes = content.reduce((acc, currentValue) => {
       return currentValue.heading.split(/\s+/).length + acc;
@@ -50,7 +66,7 @@ export default function Post({ post }: PostProps): JSX.Element {
     );
 
     if (getWordsPerMinutes < 1) {
-      return 'Rápida leitura';
+      return 'Menos de 1min';
     }
 
     if (getWordsPerMinutes < 60) {
@@ -75,7 +91,7 @@ export default function Post({ post }: PostProps): JSX.Element {
           <div className={commonStyles.postInfo}>
             <time>
               <FiCalendar />
-              {post.first_publication_date}
+              {formatDate(post.first_publication_date)}
             </time>
             <h4>
               <FiUser />
@@ -119,6 +135,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
   };
 };
 
+// SSG
 export const getStaticProps: GetStaticProps = async props => {
   const { slug } = props.params;
 
@@ -126,15 +143,11 @@ export const getStaticProps: GetStaticProps = async props => {
   const response = await prismic.getByUID('posts', String(slug), {});
 
   const post = {
-    first_publication_date: format(
-      new Date(response.first_publication_date),
-      'dd LLL yyyy',
-      {
-        locale: ptBR,
-      }
-    ),
+    uid: response.uid,
+    first_publication_date: response.first_publication_date,
     data: {
       title: response.data.title,
+      subtitle: response.data.subtitle,
       banner: {
         url: response.data.banner.url,
       },
@@ -147,6 +160,6 @@ export const getStaticProps: GetStaticProps = async props => {
     props: {
       post,
     },
-    revalidate: 30 * 60,
+    revalidate: 60 * 30, // 30 minutes
   };
 };
