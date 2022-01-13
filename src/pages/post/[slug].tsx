@@ -3,6 +3,7 @@
 import { GetStaticPaths, GetStaticProps } from 'next';
 import { FiCalendar, FiUser, FiClock } from 'react-icons/fi';
 import Prismic from '@prismicio/client';
+import Link from 'next/link';
 
 import { format, minutesToHours } from 'date-fns';
 import ptBR from 'date-fns/locale/pt-BR';
@@ -35,9 +36,10 @@ interface Post {
 
 interface PostProps {
   post: Post;
+  preview: boolean;
 }
 
-export default function Post({ post }: PostProps): JSX.Element {
+export default function Post({ post, preview }: PostProps): JSX.Element {
   const { isFallback } = useRouter();
 
   // Show loading message if the route is a fallback
@@ -113,6 +115,17 @@ export default function Post({ post }: PostProps): JSX.Element {
           ))}
         </section>
       </article>
+      {/* Comments from Utteranc */}
+      <Comments />
+      {preview && (
+        <aside className={commonStyles.container}>
+          <div className={commonStyles.previewButton}>
+            <Link href="/api/exit-preview">
+              <a>Sair do modo Preview</a>
+            </Link>
+          </div>
+        </aside>
+      )}
     </>
   );
 }
@@ -137,11 +150,17 @@ export const getStaticPaths: GetStaticPaths = async () => {
 };
 
 // SSG
-export const getStaticProps: GetStaticProps = async props => {
-  const { slug } = props.params;
+export const getStaticProps: GetStaticProps<PostProps> = async ({
+  params,
+  preview = false,
+  previewData,
+}) => {
+  const { slug } = params;
 
   const prismic = getPrismicClient();
-  const response = await prismic.getByUID('posts', String(slug), {});
+  const response = await prismic.getByUID('posts', String(slug), {
+    ref: previewData?.ref ?? null,
+  });
 
   const post = {
     uid: response.uid,
@@ -160,6 +179,7 @@ export const getStaticProps: GetStaticProps = async props => {
   return {
     props: {
       post,
+      preview,
     },
     revalidate: 60 * 30, // 30 minutes
   };
