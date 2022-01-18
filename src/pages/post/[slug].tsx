@@ -19,6 +19,7 @@ import Comments from '../../components/Comments';
 
 interface Post {
   first_publication_date: string | null;
+  last_publication_date: string | null;
   data: {
     title: string;
     banner: {
@@ -65,6 +66,12 @@ export default function Post({
   // Format ISO date. Ex.: 10 Mar 2021
   function formatDate(date: string): string {
     return format(new Date(date), 'dd LLL yyyy', {
+      locale: ptBR,
+    });
+  }
+
+  function getHours(date: string): string {
+    return format(new Date(date), 'HH:mm', {
       locale: ptBR,
     });
   }
@@ -120,6 +127,12 @@ export default function Post({
               {calculateReadingTime(post.data.content)}
             </h4>
           </div>
+          {post.last_publication_date && (
+            <p className={styles.edited}>
+              *editado em {formatDate(post.last_publication_date)}, às{' '}
+              {getHours(post.last_publication_date)}
+            </p>
+          )}
           {post.data.content.map(elem => (
             <div key={elem.heading}>
               <h2>{elem.heading}</h2>
@@ -132,7 +145,7 @@ export default function Post({
         {/* Post pagination (prev/next) */}
         <aside className={`${commonStyles.container} ${styles.pagination}`}>
           {/* Previous post (most recent) */}
-          {navigation.prevPost && (
+          {navigation?.prevPost && (
             <div className={styles.leftPagination}>
               <h5>{navigation.prevPost.data.title}</h5>
               <Link href={`/post/${navigation.prevPost.uid}`}>
@@ -141,7 +154,7 @@ export default function Post({
             </div>
           )}
           {/* Next post (most older) */}
-          {navigation.nextPost && (
+          {navigation?.nextPost && (
             <div className={styles.rightPagination}>
               <h5>{navigation.nextPost.data.title}</h5>
               <Link href={`/post/${navigation.nextPost.uid}`}>
@@ -219,6 +232,7 @@ export const getStaticProps: GetStaticProps<PostProps> = async ({
   const post = {
     uid: response.uid,
     first_publication_date: response.first_publication_date,
+    last_publication_date: response.last_publication_date,
     data: {
       title: response.data.title,
       subtitle: response.data.subtitle,

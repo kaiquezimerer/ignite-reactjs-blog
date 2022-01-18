@@ -52,6 +52,13 @@
   hr {
     height: 1px;
   }
+
+  .edited {
+    color: var(--gray);
+    font-size: 0.85rem;
+    font-style: italic;
+    margin-top: 0.8rem;
+  }
 }
 
 .loading {
