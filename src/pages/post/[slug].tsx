@@ -34,12 +34,27 @@ interface Post {
   };
 }
 
+type PrevNextPost = {
+  uid: string;
+  data: {
+    title: string;
+  };
+};
+
 interface PostProps {
   post: Post;
   preview: boolean;
+  navigation: {
+    prevPost: PrevNextPost;
+    nextPost: PrevNextPost;
+  };
 }
 
-export default function Post({ post, preview }: PostProps): JSX.Element {
+export default function Post({
+  post,
+  preview,
+  navigation,
+}: PostProps): JSX.Element {
   const { isFallback } = useRouter();
 
   // Show loading message if the route is a fallback
@@ -114,6 +129,27 @@ export default function Post({ post, preview }: PostProps): JSX.Element {
             </div>
           ))}
         </section>
+        {/* Post pagination (prev/next) */}
+        <aside className={`${commonStyles.container} ${styles.pagination}`}>
+          {/* Previous post (most recent) */}
+          {navigation.prevPost && (
+            <div className={styles.leftPagination}>
+              <h5>{navigation.prevPost.data.title}</h5>
+              <Link href={`/post/${navigation.prevPost.uid}`}>
+                <a>Post anterior</a>
+              </Link>
+            </div>
+          )}
+          {/* Next post (most older) */}
+          {navigation.nextPost && (
+            <div className={styles.rightPagination}>
+              <h5>{navigation.nextPost.data.title}</h5>
+              <Link href={`/post/${navigation.nextPost.uid}`}>
+                <a>Próximo post</a>
+              </Link>
+            </div>
+          )}
+        </aside>
       </article>
       {/* Comments from Utteranc */}
       <Comments />
@@ -162,6 +198,24 @@ export const getStaticProps: GetStaticProps<PostProps> = async ({
     ref: previewData?.ref ?? null,
   });
 
+  const prevPost = await prismic.query(
+    [Prismic.Predicates.at('document.type', 'posts')],
+    {
+      pageSize: 1,
+      after: response.id,
+      orderings: '[document.last_publication_date]',
+    }
+  );
+
+  const nextPost = await prismic.query(
+    [Prismic.Predicates.at('document.type', 'posts')],
+    {
+      pageSize: 1,
+      after: response.id,
+      orderings: '[document.last_publication_date desc]',
+    }
+  );
+
   const post = {
     uid: response.uid,
     first_publication_date: response.first_publication_date,
@@ -176,10 +230,16 @@ export const getStaticProps: GetStaticProps<PostProps> = async ({
     },
   };
 
+  const navigation = {
+    prevPost: prevPost?.results[0] ?? null,
+    nextPost: nextPost?.results[0] ?? null,
+  };
+
   return {
     props: {
       post,
       preview,
+      navigation,
     },
     revalidate: 60 * 30, // 30 minutes
   };
