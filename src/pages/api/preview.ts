@@ -17,6 +17,7 @@ export default async (
   res: NextApiResponse
 ): Promise<void> => {
   const { token: ref, documentId } = req.query;
+
   const redirectUrl = await getPrismicClient(req)
     .getPreviewResolver(ref, documentId)
     .resolve(linkResolver, '/');

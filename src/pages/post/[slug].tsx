@@ -1,21 +1,19 @@
-/* eslint-disable react/no-danger */
-
+import Link from 'next/link';
 import { GetStaticPaths, GetStaticProps } from 'next';
 import { FiCalendar, FiUser, FiClock } from 'react-icons/fi';
 import Prismic from '@prismicio/client';
-import Link from 'next/link';
-
 import { format, minutesToHours } from 'date-fns';
 import ptBR from 'date-fns/locale/pt-BR';
 import { RichText } from 'prismic-dom';
 import { useRouter } from 'next/router';
+
 import Header from '../../components/Header';
 
 import { getPrismicClient } from '../../services/prismic';
 
 import commonStyles from '../../styles/common.module.scss';
-import styles from './post.module.scss';
 import Comments from '../../components/Comments';
+import styles from './post.module.scss';
 
 interface Post {
   first_publication_date: string | null;
@@ -70,6 +68,7 @@ export default function Post({
     });
   }
 
+  // Get formatted hours: Ex.: 00:30
   function getHours(date: string): string {
     return format(new Date(date), 'HH:mm', {
       locale: ptBR,
@@ -103,9 +102,11 @@ export default function Post({
 
   return (
     <>
+      {/* Header */}
       <div className={commonStyles.container}>
         <Header />
       </div>
+      {/* Content (Post) */}
       <article className={styles.content}>
         <section
           className={styles.banner}
@@ -127,6 +128,7 @@ export default function Post({
               {calculateReadingTime(post.data.content)}
             </h4>
           </div>
+          {/* Last update time */}
           {post.last_publication_date && (
             <p className={styles.edited}>
               *editado em {formatDate(post.last_publication_date)}, às{' '}
@@ -179,6 +181,7 @@ export default function Post({
   );
 }
 
+// SSG
 export const getStaticPaths: GetStaticPaths = async () => {
   const prismic = getPrismicClient();
   const posts = await prismic.query(
@@ -199,7 +202,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 };
 
 // SSG
-export const getStaticProps: GetStaticProps<PostProps> = async ({
+export const getStaticProps: GetStaticProps = async ({
   params,
   preview = false,
   previewData,
@@ -207,10 +210,13 @@ export const getStaticProps: GetStaticProps<PostProps> = async ({
   const { slug } = params;
 
   const prismic = getPrismicClient();
+
+  // Query post data by UID (slug)
   const response = await prismic.getByUID('posts', String(slug), {
     ref: previewData?.ref ?? null,
   });
 
+  // Query previous post
   const prevPost = await prismic.query(
     [Prismic.Predicates.at('document.type', 'posts')],
     {
@@ -220,6 +226,7 @@ export const getStaticProps: GetStaticProps<PostProps> = async ({
     }
   );
 
+  // Query next post
   const nextPost = await prismic.query(
     [Prismic.Predicates.at('document.type', 'posts')],
     {
