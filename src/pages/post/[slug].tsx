@@ -1,22 +1,23 @@
-/* eslint-disable react/no-danger */
-
+import Link from 'next/link';
 import { GetStaticPaths, GetStaticProps } from 'next';
 import { FiCalendar, FiUser, FiClock } from 'react-icons/fi';
 import Prismic from '@prismicio/client';
-
 import { format, minutesToHours } from 'date-fns';
 import ptBR from 'date-fns/locale/pt-BR';
 import { RichText } from 'prismic-dom';
 import { useRouter } from 'next/router';
+
 import Header from '../../components/Header';
 
 import { getPrismicClient } from '../../services/prismic';
 
 import commonStyles from '../../styles/common.module.scss';
+import Comments from '../../components/Comments';
 import styles from './post.module.scss';
 
 interface Post {
   first_publication_date: string | null;
+  last_publication_date: string | null;
   data: {
     title: string;
     banner: {
@@ -32,11 +33,27 @@ interface Post {
   };
 }
 
+type PrevNextPost = {
+  uid: string;
+  data: {
+    title: string;
+  };
+};
+
 interface PostProps {
   post: Post;
+  preview: boolean;
+  navigation: {
+    prevPost: PrevNextPost;
+    nextPost: PrevNextPost;
+  };
 }
 
-export default function Post({ post }: PostProps): JSX.Element {
+export default function Post({
+  post,
+  preview,
+  navigation,
+}: PostProps): JSX.Element {
   const { isFallback } = useRouter();
 
   // Show loading message if the route is a fallback
@@ -47,6 +64,13 @@ export default function Post({ post }: PostProps): JSX.Element {
   // Format ISO date. Ex.: 10 Mar 2021
   function formatDate(date: string): string {
     return format(new Date(date), 'dd LLL yyyy', {
+      locale: ptBR,
+    });
+  }
+
+  // Get formatted hours: Ex.: 00:30
+  function getHours(date: string): string {
+    return format(new Date(date), 'HH:mm', {
       locale: ptBR,
     });
   }
@@ -78,9 +102,11 @@ export default function Post({ post }: PostProps): JSX.Element {
 
   return (
     <>
+      {/* Header */}
       <div className={commonStyles.container}>
         <Header />
       </div>
+      {/* Content (Post) */}
       <article className={styles.content}>
         <section
           className={styles.banner}
@@ -102,6 +128,13 @@ export default function Post({ post }: PostProps): JSX.Element {
               {calculateReadingTime(post.data.content)}
             </h4>
           </div>
+          {/* Last update time */}
+          {post.last_publication_date && (
+            <p className={styles.edited}>
+              *editado em {formatDate(post.last_publication_date)}, às{' '}
+              {getHours(post.last_publication_date)}
+            </p>
+          )}
           {post.data.content.map(elem => (
             <div key={elem.heading}>
               <h2>{elem.heading}</h2>
@@ -111,11 +144,44 @@ export default function Post({ post }: PostProps): JSX.Element {
             </div>
           ))}
         </section>
+        {/* Post pagination (prev/next) */}
+        <aside className={`${commonStyles.container} ${styles.pagination}`}>
+          {/* Previous post (most recent) */}
+          {navigation?.prevPost && (
+            <div className={styles.leftPagination}>
+              <h5>{navigation.prevPost.data.title}</h5>
+              <Link href={`/post/${navigation.prevPost.uid}`}>
+                <a>Post anterior</a>
+              </Link>
+            </div>
+          )}
+          {/* Next post (most older) */}
+          {navigation?.nextPost && (
+            <div className={styles.rightPagination}>
+              <h5>{navigation.nextPost.data.title}</h5>
+              <Link href={`/post/${navigation.nextPost.uid}`}>
+                <a>Próximo post</a>
+              </Link>
+            </div>
+          )}
+        </aside>
       </article>
+      {/* Comments from Utteranc */}
+      <Comments />
+      {preview && (
+        <aside className={commonStyles.container}>
+          <div className={commonStyles.previewButton}>
+            <Link href="/api/exit-preview">
+              <a>Sair do modo Preview</a>
+            </Link>
+          </div>
+        </aside>
+      )}
     </>
   );
 }
 
+// SSG
 export const getStaticPaths: GetStaticPaths = async () => {
   const prismic = getPrismicClient();
   const posts = await prismic.query(
@@ -136,15 +202,44 @@ export const getStaticPaths: GetStaticPaths = async () => {
 };
 
 // SSG
-export const getStaticProps: GetStaticProps = async props => {
-  const { slug } = props.params;
+export const getStaticProps: GetStaticProps = async ({
+  params,
+  preview = false,
+  previewData,
+}) => {
+  const { slug } = params;
 
   const prismic = getPrismicClient();
-  const response = await prismic.getByUID('posts', String(slug), {});
+
+  // Query post data by UID (slug)
+  const response = await prismic.getByUID('posts', String(slug), {
+    ref: previewData?.ref ?? null,
+  });
+
+  // Query previous post
+  const prevPost = await prismic.query(
+    [Prismic.Predicates.at('document.type', 'posts')],
+    {
+      pageSize: 1,
+      after: response.id,
+      orderings: '[document.last_publication_date]',
+    }
+  );
+
+  // Query next post
+  const nextPost = await prismic.query(
+    [Prismic.Predicates.at('document.type', 'posts')],
+    {
+      pageSize: 1,
+      after: response.id,
+      orderings: '[document.last_publication_date desc]',
+    }
+  );
 
   const post = {
     uid: response.uid,
     first_publication_date: response.first_publication_date,
+    last_publication_date: response.last_publication_date,
     data: {
       title: response.data.title,
       subtitle: response.data.subtitle,
@@ -156,9 +251,16 @@ export const getStaticProps: GetStaticProps = async props => {
     },
   };
 
+  const navigation = {
+    prevPost: prevPost?.results[0] ?? null,
+    nextPost: nextPost?.results[0] ?? null,
+  };
+
   return {
     props: {
       post,
+      preview,
+      navigation,
     },
     revalidate: 60 * 30, // 30 minutes
   };
