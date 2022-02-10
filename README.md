@@ -24,7 +24,7 @@ Você vai precisar criar uma conta, um repositório e algumas publicações no [
     # Copie o arquivo .env-sample para .env.local
     $ $ cp .env-sample .env.local
 
-    # Altere o .env.local com os dados do repositório do Prismic CMS (sando nano, vim ou qualquer editor)
+    # Altere o .env.local com os dados do repositório do Prismic CMS (via nano, vim ou qualquer editor)
     $ nano .env.local
 
     # Inicialize o projeto em modo de desenvolvimento
