@@ -22,7 +22,7 @@ Você vai precisar criar uma conta, um repositório e algumas publicações no [
     $ yarn install
     
     # Copie o arquivo .env-sample para .env.local
-    $ $ cp .env-sample .env.local
+    $ cp .env-sample .env.local
 
     # Altere o .env.local com os dados do repositório do Prismic CMS (via nano, vim ou qualquer editor)
     $ nano .env.local
